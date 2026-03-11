@@ -16,6 +16,20 @@ import io
 API_URL='http://127.0.0.1:8000/predict_image/'
 API_URL2= 'http://127.0.0.1:8000/generate_heatmap/'
 
+#Colors
+ROUGE = '#FF4B4B'
+BLEU = '#1f77b4'
+VERT = '#2ECC71'
+ORANGE = '#F39C12'
+BLEU_FONCE = "#1F4E79"
+JAUNE = '#F1C40F'
+VIOLET = '#8E44AD'
+CYAN = '#1ABC9C'
+GRIS_CLAIR = '#F5F7FA'
+GRIS_FONCE = '#34495E'
+NOIR = '#000000'
+BLANC = '#FFFFFF'
+
 #-------------------------
 # Configuration des pages
 #-------------------------
@@ -25,7 +39,24 @@ st.set_page_config(
     layout="wide",
     initial_sidebar_state="expanded"
 )
-st.title("D-FAKE App - Frontend Demo")
+#st.title("D-FAKE")
+st.markdown("""
+<h1 style='text-align:center; color:BLACK;'>
+D-FAKE
+</h1>
+""", unsafe_allow_html=True)
+
+st.markdown("""
+<p style='text-align:center; font-size:25px;'>
+<b>Protecting authenticity in the age of AI !</b>
+</p>
+""", unsafe_allow_html=True)
+
+#st.markdown("""
+#<p style='text-align:center; font-size:21px;'>
+#<b>Protecting authenticity in the age of AI !</b>
+#</p>
+#""", unsafe_allow_html=True)
 
 # ------------------------------------------------
 # Validation image loadée avant envoie à l'API
@@ -62,30 +93,40 @@ def validate_image(uploaded_file, max_size=4000): #Taille à valider avec équip
 # -------------------------
 # Sidebar Menu
 # -------------------------
-
-menu = st.sidebar.selectbox(
-    "MENU",
-    ["Home","Check a picture"]
-)
+#st.sidebar.title("Navigation")
+menu = st.sidebar.selectbox('MENU',["Home","Check your image"])
 
 # Home (dans menu déroulant)
 #----------------------------
 if menu == "Home":      # Dans page home on pourra faire un descriptif
                         # Je ferai des propositions avec logo wagon, Batch 2225..
 
-    st.header("D-Fake Project")
+    # Logo du Wagon centré
+    col1, col2, col3 = st.columns([1,2,1])
+    with col2:
+        st.image(
+        "images/wagon.jpg",
+        caption="#BATCH-2235-LYON",
+        use_container_width=True
+    )
 
-    st.write("Upload an image to check if it's a Fake or Real.")
-    st.write("This is a frontend demo: predictions and Grad-CAM are simulated.")
+    st.markdown("### How it works ?")
+
+    st.write("""
+    1. Upload your image
+    2. AI based on DeepLearning analyzes your image
+    3. The model predicts **Real or Fake**
+    4. GRAD Cam shows you the fake areas
+    """)
 
 # Check a picture (dans menu déroulant)
 #---------------------------------------
-elif menu == "Check a picture":
+elif menu == "Check your image":
 
-    st.header("Image Detection")
+    st.header("Upload your image")
     #objet fichier en mémoire déjà en binaire
     uploaded_file = st.file_uploader(
-        "Upload your image",
+        " ",
         type=["jpg","jpeg","png","gif","bmp","webp"] # filtrage au niveau de l'interface
 )
     # Un fichier a été uploadé
@@ -108,9 +149,10 @@ elif menu == "Check a picture":
              image_heatmap_data = base64.b64decode(data["heatmap"]) # Heatmap est en binaire
 
              #st.write(f"Your picture is a **{label}** one !")
-             # Real en vert et Fake en rouge
+             # Real en vert et Fake en rouge avec couluer de progress bar rouge ou verte et plus bleu
              if label == "FAKE":
                     st.markdown(f'<p style="color:red; font-weight:bold;">Your picture is a {label} one !</p>', unsafe_allow_html=True)
+
              else:
                     st.markdown(f'<p style="color:green; font-weight:bold;">Your picture is a {label} one !</p>', unsafe_allow_html=True)
 
@@ -137,4 +179,4 @@ elif menu == "Check a picture":
                  st.error("Error calling the API")
 
     else:
-        st.write("No file uploaded")
+        st.write("No file uploaded yet")
