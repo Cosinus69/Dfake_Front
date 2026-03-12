@@ -9,14 +9,17 @@ import random
 import base64
 import io
 
-
+#----------
 #CONSTANT
+#----------
 
 #API url
+#--------
 API_URL='http://127.0.0.1:8000/predict_image/'
 API_URL2= 'http://127.0.0.1:8000/generate_heatmap/'
 
 #Colors
+#------
 ROUGE = '#FF4B4B'
 BLEU = '#1f77b4'
 VERT = '#2ECC71'
@@ -29,6 +32,17 @@ GRIS_CLAIR = '#F5F7FA'
 GRIS_FONCE = '#34495E'
 NOIR = '#000000'
 BLANC = '#FFFFFF'
+
+#Probability threshold
+#---------------------
+FALSE_LEVEL = 0.45
+REAL_LEVEL = 0.55
+
+# Maximum image size
+#-------------------
+MAX_SIZE = 4000
+
+
 
 #-------------------------
 # Configuration des pages
@@ -52,21 +66,18 @@ st.markdown("""
 </p>
 """, unsafe_allow_html=True)
 
-#st.markdown("""
-#<p style='text-align:center; font-size:21px;'>
-#<b>Protecting authenticity in the age of AI !</b>
-#</p>
-#""", unsafe_allow_html=True)
+st.markdown("---")
 
 # ------------------------------------------------
 # Validation image loadée avant envoie à l'API
 # ------------------------------------------------
-def validate_image(uploaded_file, max_size=4000): #Taille à valider avec équipe
+def validate_image(uploaded_file, max_size=MAX_SIZE): #Taille à valider avec équipe
     try:
         image = Image.open(uploaded_file)
         image.verify()  # vérification de l'intégrité
     except Exception:
-        st.error("Corrupted image file")
+        st.error("⚠️ Corrupted image file")
+        st.stop()
         return None
 
     # On réouvre après verify
@@ -75,11 +86,14 @@ def validate_image(uploaded_file, max_size=4000): #Taille à valider avec équip
     # verification du format pour éviter les virus avec changement d'extension
     allowed_formats = ["JPEG","PNG","GIF","BMP","WEBP"] # on rajoute d'autres formats ?
     if image.format not in allowed_formats:
-        st.error(f"Unsupported format: {image.format}")
+        st.error(f" 🟡 Unsupported format: {image.format}")
+        st.stop()
         return None
     # verification de la taille de l'image loadéé (A CONFIRMER ENSEMBLE pour max_size)
     if image.width > max_size or image.height > max_size:
-        st.error("Image too large")
+        st.error(f"⚠️ Image too large : Max size is {max_size} x {max_size}" )
+        #st.info("Maximum allowed size: 4000 x 4000 pixels")
+        st.stop()
         return None
 
     # conversion en (224,224,3) comme cela vous êtes tranquille pour le back end
@@ -98,20 +112,17 @@ menu = st.sidebar.selectbox('MENU',["Home","Check your image"])
 
 # Home (dans menu déroulant)
 #----------------------------
-if menu == "Home":      # Dans page home on pourra faire un descriptif
-                        # Je ferai des propositions avec logo wagon, Batch 2225..
-
+if menu == "Home":
     # Logo du Wagon centré
     col1, col2, col3 = st.columns([1,2,1])
     with col2:
         st.image(
         "images/wagon.jpg",
         caption="#BATCH-2235-LYON",
-        use_container_width=True
+        width= 'stretch'
     )
 
     st.markdown("### How it works ?")
-
     st.write("""
     1. Upload your image
     2. AI based on DeepLearning analyzes your image
@@ -123,11 +134,12 @@ if menu == "Home":      # Dans page home on pourra faire un descriptif
 #---------------------------------------
 elif menu == "Check your image":
 
-    st.header("Upload your image")
+    #st.header("📷 Upload your image")
     #objet fichier en mémoire déjà en binaire
     uploaded_file = st.file_uploader(
-        " ",
-        type=["jpg","jpeg","png","gif","bmp","webp"] # filtrage au niveau de l'interface
+        "📷 Upload your image",
+        type=["jpg","jpeg","png","gif","bmp","webp"],# filtrage au niveau de l'interface
+        key = "file"
 )
     # Un fichier a été uploadé
     if uploaded_file is not None:  # evite à Streamlit de bugger
@@ -135,40 +147,93 @@ elif menu == "Check your image":
          image = validate_image(uploaded_file) # return image ou messages d'erreur à l'utilisateur si l'image n'est pas validée
          if image is not None :
             #st.image(image, caption="Uploaded Picture", use_container_width=True)
+
             #Remise du pointeur au début après image.verify sinon fichier vide et erreur connection API
             uploaded_file.seek(0)
             #Envoi du fichier au back-end API
-            files = {"file" : uploaded_file }
-            response = requests.post(API_URL2, files=files)
+            with st.spinner("🔍 Detecting fake patterns..."): # sablier si trop long
+             files = {"file" : uploaded_file }
+             response = requests.post(API_URL2, files=files)
 
          if response.status_code == 200:
              data  = response.json()
-             label = data["fake_real"]
+             #label = data["fake_real"]
              confidence = data["predict_value"]
              image_uploaded_data = base64.b64decode(data["image_resized"]) # Image est en binaire
              image_heatmap_data = base64.b64decode(data["heatmap"]) # Heatmap est en binaire
-
-             #st.write(f"Your picture is a **{label}** one !")
-             # Real en vert et Fake en rouge avec couluer de progress bar rouge ou verte et plus bleu
-             if label == "FAKE":
-                    st.markdown(f'<p style="color:red; font-weight:bold;">Your picture is a {label} one !</p>', unsafe_allow_html=True)
-
-             else:
-                    st.markdown(f'<p style="color:green; font-weight:bold;">Your picture is a {label} one !</p>', unsafe_allow_html=True)
-
-             # Barre de confiance
-             st.write(f"Confidence level: **{confidence*100:.2f}%**") # on met les probas en pourcentage
-             st.progress(int(confidence*100))
 
              # Transformation des deux images binaires en fichier mémoire ouvrables avec PIL
              initial_image_uploaded = Image.open(io.BytesIO(image_uploaded_data))
              image_heatmap = Image.open(io.BytesIO(image_heatmap_data))
 
-             # Option 1 : Affichage images côte à côte
-             #----------
-             col1, col2 = st.columns(2)
-             col1.image(initial_image_uploaded , caption="Uploaded Image", use_container_width=True)
-             col2.image(image_heatmap , caption=f"{label} - Important Zones", use_container_width=True)
+             if confidence <= FALSE_LEVEL:
+                    st.markdown(
+                        f"""
+                        <div style="
+                            background-color:#ffe6e6;
+                            padding:10px;
+                            border-radius:10px;
+                            text-align:center;
+                            font-size:20px;
+                            font-weight:bold;
+                            color:#cc0000;">
+                            ⚠️ FAKE IMAGE !
+                        </div>
+                        """,
+                        unsafe_allow_html=True
+                    )
+                    # Affichage du niveau et barre de confiance
+                    st.write(f"Confidence level: **{(1-confidence)*100:.2f}%**") # la proba de FALSE = 1 - proba de REAL
+                    st.progress(int((1-confidence)*100))
+                    # Explicabilité
+                    st.markdown("###💡 AI Explanation")
+                    st.info("Highlighted zones show where the AI focused to detect manipulation.")
+
+                    #Affichage des images côte à côte (loadée et heatmap)
+                    col1, col2 = st.columns(2)
+                    col1.image(initial_image_uploaded , caption="Uploaded Image", width='stretch')
+                    col2.image(image_heatmap , caption=f" AI Important Zones", width='stretch')
+
+             elif confidence >= REAL_LEVEL:
+                 st.markdown(
+                     f"""
+                     <div style="
+                         background-color:#e6ffe6;
+                         padding:10px;
+                         border-radius:10px;
+                         text-align:center;
+                         font-size:20px;
+                         font-weight:bold;
+                         color:GREEN;">
+                         ✅ REAL IMAGE !
+                    </div>
+                    """,
+                    unsafe_allow_html=True
+                    )
+
+                 st.write(f"Confidence level: **{confidence*100:.2f}%**") # on met les probas en pourcentage
+                 st.progress(int(confidence*100))
+
+             else:
+                 st.markdown(
+                     f"""
+                        <div style="
+                            background-color:BLACK;
+                            padding:10px;
+                            border-radius:10px;
+                            text-align:center;
+                            font-size:20px;
+                            font-weight:bold;
+                            color:#FFFFFF;">
+                            🤷 🟡 IA can't conclude !
+                        </div>
+                        """,
+                     unsafe_allow_html=True
+                     )
+
+             st.image(initial_image_uploaded , caption="Uploaded Image", width= 'stretch')
+
+             st.markdown("---")
 
              #Option 2 : affichage images l'une en dessous de l'autre(Visuel moins écrasé)
              #---------
