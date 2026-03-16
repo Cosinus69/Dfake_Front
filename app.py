@@ -9,9 +9,9 @@ import random
 import base64
 import io
 
-#----------
+#-----------------------------
 #CONSTANT
-#----------
+#----------------------------
 
 #API url
 #--------
@@ -41,8 +41,6 @@ REAL_LEVEL = 0.55
 # Maximum image size
 #-------------------
 MAX_SIZE = 4000
-
-
 
 #-------------------------
 # Configuration des pages
@@ -110,6 +108,7 @@ def validate_image(uploaded_file, max_size=MAX_SIZE): #Taille à valider avec é
 #st.sidebar.title("Navigation")
 menu = st.sidebar.selectbox('MENU',["Home","Check your image"])
 
+#----------------------------
 # Home (dans menu déroulant)
 #----------------------------
 if menu == "Home":
@@ -130,6 +129,7 @@ if menu == "Home":
     4. GRAD Cam shows you the fake areas
     """)
 
+#---------------------------------------
 # Check a picture (dans menu déroulant)
 #---------------------------------------
 elif menu == "Check your image":
@@ -177,7 +177,7 @@ elif menu == "Check your image":
                             font-size:20px;
                             font-weight:bold;
                             color:#cc0000;">
-                            ⚠️ FAKE IMAGE !
+                            This image is likely to contain AI-generated!
                         </div>
                         """,
                         unsafe_allow_html=True
@@ -186,7 +186,7 @@ elif menu == "Check your image":
                     st.write(f"Confidence level: **{(1-confidence)*100:.2f}%**") # la proba de FALSE = 1 - proba de REAL
                     st.progress(int((1-confidence)*100))
                     # Explicabilité
-                    st.markdown("###💡 AI Explanation")
+                    st.markdown("💡 AI Explanation")
                     st.info("Highlighted zones show where the AI focused to detect manipulation.")
 
                     #Affichage des images côte à côte (loadée et heatmap)
@@ -205,7 +205,7 @@ elif menu == "Check your image":
                          font-size:20px;
                          font-weight:bold;
                          color:GREEN;">
-                         ✅ REAL IMAGE !
+                         This image is likely to be Real
                     </div>
                     """,
                     unsafe_allow_html=True
@@ -213,25 +213,25 @@ elif menu == "Check your image":
 
                  st.write(f"Confidence level: **{confidence*100:.2f}%**") # on met les probas en pourcentage
                  st.progress(int(confidence*100))
-
+                 st.image(initial_image_uploaded , caption="Uploaded Image", width= 'stretch')
              else:
                  st.markdown(
                      f"""
                         <div style="
-                            background-color:BLACK;
+                            background-color: ORANGE;
                             padding:10px;
                             border-radius:10px;
                             text-align:center;
                             font-size:20px;
                             font-weight:bold;
                             color:#FFFFFF;">
-                            🤷 🟡 IA can't conclude !
+                            🤷 IA can't conclude !
                         </div>
                         """,
                      unsafe_allow_html=True
                      )
 
-             st.image(initial_image_uploaded , caption="Uploaded Image", width= 'stretch')
+                 st.image(initial_image_uploaded , caption="Uploaded Image", width= 'stretch')
 
              st.markdown("---")
 
