@@ -15,8 +15,14 @@ import io
 
 #API url
 #--------
-API_URL='http://127.0.0.1:8000/predict_image/'
-API_URL2= 'http://127.0.0.1:8000/generate_heatmap/'
+
+API_CNN_MAISON = 'https://dfake-api-177374570628.europe-west1.run.app/generate_heatmap/' # API avec modèle CNN maison
+
+#TOKEN API
+#----------
+
+TOKEN ='c2679915e176ee74332779c1ed1792bd'
+
 
 #Colors
 #------
@@ -35,8 +41,8 @@ BLANC = '#FFFFFF'
 
 #Probability threshold
 #---------------------
-FALSE_LEVEL = 0.45
-REAL_LEVEL = 0.55
+FALSE_LEVEL = 0.4
+REAL_LEVEL = 0.6
 
 # Maximum image size
 #-------------------
@@ -69,7 +75,7 @@ st.markdown("---")
 # ------------------------------------------------
 # Validation image loadée avant envoie à l'API
 # ------------------------------------------------
-def validate_image(uploaded_file, max_size=MAX_SIZE): #Taille à valider avec équipe
+def validate_image(uploaded_file, max_size=MAX_SIZE):
     try:
         image = Image.open(uploaded_file)
         image.verify()  # vérification de l'intégrité
@@ -82,19 +88,18 @@ def validate_image(uploaded_file, max_size=MAX_SIZE): #Taille à valider avec é
     image = Image.open(uploaded_file)
 
     # verification du format pour éviter les virus avec changement d'extension
-    allowed_formats = ["JPEG","PNG","GIF","BMP","WEBP"] # on rajoute d'autres formats ?
+    allowed_formats = ["JPG","JPEG","PNG","GIF","BMP"]
     if image.format not in allowed_formats:
         st.error(f" 🟡 Unsupported format: {image.format}")
         st.stop()
         return None
-    # verification de la taille de l'image loadéé (A CONFIRMER ENSEMBLE pour max_size)
+    # verification de la taille de l'image loadéé
     if image.width > max_size or image.height > max_size:
-        st.error(f"⚠️ Image too large : Max size is {max_size} x {max_size}" )
-        #st.info("Maximum allowed size: 4000 x 4000 pixels")
+        st.error(f"⚠️ Image too large : Max size is {max_size} x {max_size}")
         st.stop()
         return None
 
-    # conversion en (224,224,3) comme cela vous êtes tranquille pour le back end
+    # conversion en (224,224,3)
     # convertit aussi les images en noir et blanc et format PNG transparent
     if image.mode != "RGB":
         image = image.convert("RGB")
@@ -118,14 +123,14 @@ if menu == "Home":
         st.image(
         "images/wagon.jpg",
         caption="#BATCH-2235-LYON",
-        width= 'stretch'
+        width='stretch'
     )
 
     st.markdown("### How it works ?")
     st.write("""
     1. Upload your image
     2. AI based on DeepLearning analyzes your image
-    3. The model predicts **Real or Fake**
+    3. The model predicts **Real or Fake or Cannot conclude**
     4. GRAD Cam shows you the fake areas
     """)
 
@@ -138,22 +143,24 @@ elif menu == "Check your image":
     #objet fichier en mémoire déjà en binaire
     uploaded_file = st.file_uploader(
         "📷 Upload your image",
-        type=["jpg","jpeg","png","gif","bmp","webp"],# filtrage au niveau de l'interface
+        type=["jpg","jpeg","png","gif","bmp"],# filtrage au niveau de l'interface
         key = "file"
 )
+
     # Un fichier a été uploadé
     if uploaded_file is not None:  # evite à Streamlit de bugger
          # validation préalable de l'image loadée et conversion en RGB
          image = validate_image(uploaded_file) # return image ou messages d'erreur à l'utilisateur si l'image n'est pas validée
          if image is not None :
-            #st.image(image, caption="Uploaded Picture", use_container_width=True)
+            #st.image(image, caption="Uploaded Picture", width='stretch')
 
             #Remise du pointeur au début après image.verify sinon fichier vide et erreur connection API
             uploaded_file.seek(0)
             #Envoi du fichier au back-end API
             with st.spinner("🔍 Detecting fake patterns..."): # sablier si trop long
              files = {"file" : uploaded_file }
-             response = requests.post(API_URL2, files=files)
+             headers = {'token' : TOKEN}
+             response = requests.post(API_CNN_MAISON, files=files, headers=headers)
 
          if response.status_code == 200:
              data  = response.json()
@@ -177,12 +184,13 @@ elif menu == "Check your image":
                             font-size:20px;
                             font-weight:bold;
                             color:#cc0000;">
-                            This image is likely to contain AI-generated!
-                        </div>
+                            This image is likely to be AI generated !
+                       </div>
                         """,
                         unsafe_allow_html=True
                     )
                     # Affichage du niveau et barre de confiance
+                    st.write(confidence)
                     st.write(f"Confidence level: **{(1-confidence)*100:.2f}%**") # la proba de FALSE = 1 - proba de REAL
                     st.progress(int((1-confidence)*100))
                     # Explicabilité
@@ -192,7 +200,7 @@ elif menu == "Check your image":
                     #Affichage des images côte à côte (loadée et heatmap)
                     col1, col2 = st.columns(2)
                     col1.image(initial_image_uploaded , caption="Uploaded Image", width='stretch')
-                    col2.image(image_heatmap , caption=f" AI Important Zones", width='stretch')
+                    col2.image(image_heatmap , caption=f"Fake zones", width='stretch')
 
              elif confidence >= REAL_LEVEL:
                  st.markdown(
@@ -206,11 +214,11 @@ elif menu == "Check your image":
                          font-weight:bold;
                          color:GREEN;">
                          This image is likely to be Real
-                    </div>
-                    """,
+                     </div>
+                     """,
                     unsafe_allow_html=True
                     )
-
+                 st.write(confidence)
                  st.write(f"Confidence level: **{confidence*100:.2f}%**") # on met les probas en pourcentage
                  st.progress(int(confidence*100))
                  st.image(initial_image_uploaded , caption="Uploaded Image", width= 'stretch')
@@ -235,10 +243,6 @@ elif menu == "Check your image":
 
              st.markdown("---")
 
-             #Option 2 : affichage images l'une en dessous de l'autre(Visuel moins écrasé)
-             #---------
-             #st.image(initial_image_uploaded , caption="Uploaded Image", use_container_width=True)
-             #st.image(image_heatmap , caption=f"{label} - Important Zones", use_container_width=True)
 
          else:
                  st.error("Error calling the API")
