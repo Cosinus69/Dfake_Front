@@ -4,8 +4,6 @@ from PIL import Image #Package pillow =PIL
 
 # Déjà installés dans le package Python version 3.12.9
 import requests
-import cv2
-import random
 import base64
 import io
 
