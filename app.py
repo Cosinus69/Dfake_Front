@@ -88,7 +88,7 @@ def validate_image(uploaded_file, max_size=MAX_SIZE):
     image = Image.open(uploaded_file)
 
     # verification du format pour éviter les virus avec changement d'extension
-    allowed_formats = ["JPG","JPEG","PNG","GIF","BMP"]
+    allowed_formats = ["JPG","JPEG","PNG","GIF","BMP","MPO"]
     if image.format not in allowed_formats:
         st.error(f" 🟡 Unsupported format: {image.format}")
         st.stop()
@@ -143,7 +143,7 @@ elif menu == "Check your image":
     #objet fichier en mémoire déjà en binaire
     uploaded_file = st.file_uploader(
         "📷 Upload your image",
-        type=["jpg","jpeg","png","gif","bmp"],# filtrage au niveau de l'interface
+        type=["jpg","jpeg","png","gif","bmp","MPO"],# filtrage au niveau de l'interface
         key = "file"
 )
 
@@ -223,6 +223,7 @@ elif menu == "Check your image":
                  st.progress(int(confidence*100))
                  st.image(initial_image_uploaded , caption="Uploaded Image", width= 'stretch')
              else:
+                 st.write(confidence)
                  st.markdown(
                      f"""
                         <div style="
