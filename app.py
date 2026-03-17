@@ -124,10 +124,10 @@ if menu == "Home":
         width='stretch'
     )
 
-    st.markdown("### How it works ?")
+    st.markdown("### How does it work ?")
     st.write("""
     1. Upload your image
-    2. AI based on DeepLearning analyzes your image
+    2. AI based on Deep Learning analyzes your image
     3. The model predicts **Real or Fake or Cannot conclude**
     4. GRAD Cam shows you the fake areas
     """)
