@@ -15,8 +15,7 @@ import io
 #--------
 
 API_CNN_MAISON = 'https://dfake-api-177374570628.europe-west1.run.app/generate_heatmap/' # API avec modèle CNN maison
-
-#TOKEN API
+API_EFFICIENT = 'https://dfake-api-177374570628.europe-west1.run.app//predict-efficientnet/'# API avec transfert learning
 #----------
 
 TOKEN ='c2679915e176ee74332779c1ed1792bd'
@@ -28,19 +27,19 @@ ROUGE = '#FF4B4B'
 BLEU = '#1f77b4'
 VERT = '#2ECC71'
 ORANGE = '#F39C12'
-BLEU_FONCE = "#1F4E79"
+BLEU_FONCE = '#1F4E79'
 JAUNE = '#F1C40F'
 VIOLET = '#8E44AD'
 CYAN = '#1ABC9C'
-GRIS_CLAIR = '#F5F7FA'
-GRIS_FONCE = '#34495E'
+GRIS_CLAIR = '#C8CED8'
+GRIS_FONCE = "#727679"
 NOIR = '#000000'
 BLANC = '#FFFFFF'
 
 #Probability threshold
 #---------------------
-FALSE_LEVEL = 0.4
-REAL_LEVEL = 0.6
+#FALSE_LEVEL = 0.5
+REAL_LEVEL = 1
 
 # Maximum image size
 #-------------------
@@ -55,16 +54,16 @@ st.set_page_config(
     layout="wide",
     initial_sidebar_state="expanded"
 )
-#st.title("D-FAKE")
-st.markdown("""
-<h1 style='text-align:center; color:BLACK;'>
+#st.title("D-FAKE")#1F4E79
+st.markdown(f"""
+<h1 style='text-align:center;color:{GRIS_FONCE};'>
 D-FAKE
 </h1>
 """, unsafe_allow_html=True)
 
-st.markdown("""
-<p style='text-align:center; font-size:25px;'>
-<b>Protecting authenticity in the age of AI !</b>
+st.markdown(f"""
+<p style='text-align:center; font-size:25px;color:{GRIS_FONCE};'>
+<b>Protecting authenticity in the age of AI</b>
 </p>
 """, unsafe_allow_html=True)
 
@@ -109,6 +108,7 @@ def validate_image(uploaded_file, max_size=MAX_SIZE):
 # Sidebar Menu
 # -------------------------
 #st.sidebar.title("Navigation")
+
 menu = st.sidebar.selectbox('MENU',["Home","Check your image"])
 
 #----------------------------
@@ -123,14 +123,31 @@ if menu == "Home":
         caption="#BATCH-2235-LYON",
         width='stretch'
     )
+    st.markdown("---")
+    #st.markdown("### How does it work?")
 
-    st.markdown("### How does it work ?")
-    st.write("""
-    1. Upload your image
-    2. AI based on Deep Learning analyzes your image
-    3. The model predicts **Real or Fake or Cannot conclude**
-    4. GRAD Cam shows you the fake areas
-    """)
+    st.markdown(f"""
+    <p style='text-align:left; font-size:20px;color:{GRIS_FONCE};'>
+    <b>How does it work ?</b>
+    </p>
+    """, unsafe_allow_html=True)
+
+    st.markdown(f"""
+:color[1. Upload your image]{{foreground="{GRIS_FONCE}"}}
+
+:color[2. AI based on Deep Learning analyzes your image]{{foreground={GRIS_FONCE}}}
+
+:color[3. The model predicts **Real or Fake**]{{foreground={GRIS_FONCE}}}
+
+:color[4. Grad CAM shows you the fake zones]{{foreground={GRIS_FONCE}}}
+""")
+
+    #st.write("""
+    #1. Upload your image
+    #2. AI based on Deep Learning analyzes your image
+    #3. The model predicts **Real or Fake or Cannot conclude**
+    #4. Grad CAM shows you the fake areas
+    #""")
 
 #---------------------------------------
 # Check a picture (dans menu déroulant)
@@ -167,40 +184,12 @@ elif menu == "Check your image":
              image_uploaded_data = base64.b64decode(data["image_resized"]) # Image est en binaire
              image_heatmap_data = base64.b64decode(data["heatmap"]) # Heatmap est en binaire
 
-             # Transformation des deux images binaires en fichier mémoire ouvrables avec PIL
+             #Transformation des deux images binaires en fichier mémoire ouvrables avec PIL
              initial_image_uploaded = Image.open(io.BytesIO(image_uploaded_data))
              image_heatmap = Image.open(io.BytesIO(image_heatmap_data))
 
-             if confidence <= FALSE_LEVEL:
-                    st.markdown(
-                        f"""
-                        <div style="
-                            background-color:#ffe6e6;
-                            padding:10px;
-                            border-radius:10px;
-                            text-align:center;
-                            font-size:20px;
-                            font-weight:bold;
-                            color:#cc0000;">
-                            This image is likely to be AI generated !
-                       </div>
-                        """,
-                        unsafe_allow_html=True
-                    )
-                    # Affichage du niveau et barre de confiance
-                    st.write(confidence)
-                    st.write(f"Confidence level: **{(1-confidence)*100:.2f}%**") # la proba de FALSE = 1 - proba de REAL
-                    st.progress(int((1-confidence)*100))
-                    # Explicabilité
-                    st.markdown("💡 AI Explanation")
-                    st.info("Highlighted zones show where the AI focused to detect manipulation.")
-
-                    #Affichage des images côte à côte (loadée et heatmap)
-                    col1, col2 = st.columns(2)
-                    col1.image(initial_image_uploaded , caption="Uploaded Image", width='stretch')
-                    col2.image(image_heatmap , caption=f"Fake zones", width='stretch')
-
-             elif confidence >= REAL_LEVEL:
+             #Si image proba égal à 1  on passe en Real mais sans Heatmap
+             if confidence == REAL_LEVEL:
                  st.markdown(
                      f"""
                      <div style="
@@ -216,29 +205,64 @@ elif menu == "Check your image":
                      """,
                     unsafe_allow_html=True
                     )
-                 st.write(confidence)
-                 st.write(f"Confidence level: **{confidence*100:.2f}%**") # on met les probas en pourcentage
-                 st.progress(int(confidence*100))
+
+                 st.markdown(" ")
+                 #st.write(confidence)
+                 #st.write(f"Confidence level: **{confidence*100:.2f}%**") # on met les probas en pourcentage
+                 #st.progress(int(confidence*100))
                  st.image(initial_image_uploaded , caption="Uploaded Image", width= 'stretch')
-             else:
-                 st.write(confidence)
-                 st.markdown(
-                     f"""
+
+
+             #Dans tous le reste des cas on considère que l'image est Fake
+             else :
+                    st.markdown(
+                        f"""
                         <div style="
-                            background-color: ORANGE;
+                            background-color:#ffe6e6;
                             padding:10px;
                             border-radius:10px;
                             text-align:center;
                             font-size:20px;
                             font-weight:bold;
-                            color:#FFFFFF;">
-                            🤷 IA can't conclude !
-                        </div>
+                            color:#cc0000;">
+                            This image is likely to be AI generated!
+                       </div>
                         """,
-                     unsafe_allow_html=True
-                     )
+                        unsafe_allow_html=True
+                    )
+                    # Affichage du niveau et barre de confiance
+                    #st.write(confidence)
+                    #st.write(f"Confidence level: **{(1-confidence)*100:.2f}%**") # la proba de FALSE = 1 - proba de REAL
+                    #st.progress(int((1-confidence)*100))
+                    # Explicabilité
+                    st.markdown(" ")
+                    st.info("💡 AI Explanation : The IA model focuses on certain zones of the image to detect manipulations.")
 
-                 st.image(initial_image_uploaded , caption="Uploaded Image", width= 'stretch')
+                    #Affichage des images côte à côte (loadée et heatmap)
+                    col1, col2 = st.columns(2)
+                    col1.image(initial_image_uploaded , caption="Uploaded Image", width='stretch')
+                    col2.image(image_heatmap , caption=f"Zones where the IA model focused", width='stretch')
+
+
+             #else:
+                 #st.write(confidence)
+                 #st.markdown(
+                     #f"""
+                        #<div style="
+                            #background-color: ORANGE;
+                            #padding:10px;
+                            #border-radius:10px;
+                            #text-align:center;
+                            #font-size:20px;
+                            #font-weight:bold;
+                            #color:#FFFFFF;">
+                            #🤷 IA can't conclude !
+                        #</div>
+                        #""",
+                     #@unsafe_allow_html=True
+                     #)
+
+                 #st.image(initial_image_uploaded , caption="Uploaded Image", width= 'stretch')
 
              st.markdown("---")
 
