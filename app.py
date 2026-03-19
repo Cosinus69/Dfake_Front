@@ -50,14 +50,14 @@ MAX_SIZE = 4000
 #-------------------------
 
 st.set_page_config(
-    page_title="D-FAKE",
+    page_title="FAKE BUSTER",
     layout="wide",
     initial_sidebar_state="expanded"
 )
 #st.title("D-FAKE")#1F4E79
 st.markdown(f"""
 <h1 style='text-align:center;color:{GRIS_FONCE};'>
-D-FAKE
+FAKE BUSTER
 </h1>
 """, unsafe_allow_html=True)
 
@@ -142,19 +142,14 @@ if menu == "Home":
 :color[4. Grad CAM shows you the fake zones]{{foreground={GRIS_FONCE}}}
 """)
 
-    #st.write("""
-    #1. Upload your image
-    #2. AI based on Deep Learning analyzes your image
-    #3. The model predicts **Real or Fake or Cannot conclude**
-    #4. Grad CAM shows you the fake areas
-    #""")
+
 
 #---------------------------------------
 # Check a picture (dans menu déroulant)
 #---------------------------------------
 elif menu == "Check your image":
 
-    #st.header("📷 Upload your image")
+
     #objet fichier en mémoire déjà en binaire
     uploaded_file = st.file_uploader(
         "📷 Upload your image",
@@ -167,7 +162,6 @@ elif menu == "Check your image":
          # validation préalable de l'image loadée et conversion en RGB
          image = validate_image(uploaded_file) # return image ou messages d'erreur à l'utilisateur si l'image n'est pas validée
          if image is not None :
-            #st.image(image, caption="Uploaded Picture", width='stretch')
 
             #Remise du pointeur au début après image.verify sinon fichier vide et erreur connection API
             uploaded_file.seek(0)
@@ -207,9 +201,6 @@ elif menu == "Check your image":
                     )
 
                  st.markdown(" ")
-                 #st.write(confidence)
-                 #st.write(f"Confidence level: **{confidence*100:.2f}%**") # on met les probas en pourcentage
-                 #st.progress(int(confidence*100))
                  st.image(initial_image_uploaded , caption="Uploaded Image", width= 'stretch')
 
 
@@ -230,45 +221,19 @@ elif menu == "Check your image":
                         """,
                         unsafe_allow_html=True
                     )
-                    # Affichage du niveau et barre de confiance
-                    #st.write(confidence)
-                    #st.write(f"Confidence level: **{(1-confidence)*100:.2f}%**") # la proba de FALSE = 1 - proba de REAL
-                    #st.progress(int((1-confidence)*100))
                     # Explicabilité
                     st.markdown(" ")
                     st.info("💡 AI Explanation : The IA model focuses on certain zones of the image to detect manipulations.")
 
                     #Affichage des images côte à côte (loadée et heatmap)
                     col1, col2 = st.columns(2)
+
                     col1.image(initial_image_uploaded , caption="Uploaded Image", width='stretch')
                     col2.image(image_heatmap , caption=f"Zones where the IA model focused", width='stretch')
 
-
-             #else:
-                 #st.write(confidence)
-                 #st.markdown(
-                     #f"""
-                        #<div style="
-                            #background-color: ORANGE;
-                            #padding:10px;
-                            #border-radius:10px;
-                            #text-align:center;
-                            #font-size:20px;
-                            #font-weight:bold;
-                            #color:#FFFFFF;">
-                            #🤷 IA can't conclude !
-                        #</div>
-                        #""",
-                     #@unsafe_allow_html=True
-                     #)
-
-                 #st.image(initial_image_uploaded , caption="Uploaded Image", width= 'stretch')
-
              st.markdown("---")
-
 
          else:
                  st.error("Error calling the API")
-
     else:
         st.write("No file uploaded yet")
